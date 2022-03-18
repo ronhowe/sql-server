@@ -1,0 +1,9 @@
+USE [master];
+
+ALTER DATABASE [AdventureWorks2019] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+
+RESTORE DATABASE [AdventureWorks2019] FROM DISK = N'D:\MSSQL\Backup\AdventureWorks2019.bak' WITH FILE = 1, MOVE N'AdventureWorks2017' TO N'D:\MSSQL\Data\AdventureWorks2019.mdf',  MOVE N'AdventureWorks2017_log' TO N'D:\MSSQL\Data\AdventureWorks2019_log.ldf', NOUNLOAD, REPLACE, STATS = 100;
+
+ALTER DATABASE [AdventureWorks2019] SET MULTI_USER;
+
+ALTER DATABASE [AdventureWorks2019] SET COMPATIBILITY_LEVEL = 150;
