@@ -52,8 +52,6 @@ SELECT
 FROM
 	[sys].[stats] AS [s]
 	CROSS APPLY [sys].[dm_db_stats_properties]([s].[object_id], [s].[stats_id]) AS [p]
-WHERE
-	[s].[object_id] = OBJECT_ID(N'[Production].[Product]')
 ;
 
 --Select statistics properties for a given table.
