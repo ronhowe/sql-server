@@ -1,84 +1,91 @@
 -- Create the database.
 USE [master];
-CREATE DATABASE [AuditTest];
+CREATE DATABASE [TestDatabase];
+GO
 
 -- Create test tables.
-USE [AuditTest];
-CREATE TABLE [dbo].[private] ([value] NVARCHAR(50) NULL);
-CREATE TABLE [dbo].[public] ([value] NVARCHAR(50) NULL);
+USE [TestDatabase];
+CREATE TABLE [dbo].[PrivateTable] ([Value] UNIQUEIDENTIFIER NOT NULL);
+CREATE TABLE [dbo].[PublicTable] ([Value] UNIQUEIDENTIFIER NOT NULL);
+GO
 
 -- Create the server audit.
 USE [master];
-CREATE SERVER AUDIT [Test_Server_Audit] TO FILE (FILEPATH = N'D:\MSSQL\Backup');
+CREATE SERVER AUDIT [TestServerAudit] TO FILE (FILEPATH = N'D:\MSSQL\Backup');
+GO
 
 -- Enable the server audit.
 USE [master];
-ALTER SERVER AUDIT [Test_Server_Audit] WITH (STATE = ON);
+ALTER SERVER AUDIT [TestServerAudit] WITH (STATE = ON);
+GO
 
 -- Get the server audit.
-SELECT
-	*
-FROM
-	[master].[sys].[server_audits]
-;
+SELECT * FROM [master].[sys].[server_audits];
+GO
 
 -- Get the server audit file.
-SELECT
-	*
-FROM
-	[master].[sys].[server_file_audits]
-;
+SELECT * FROM [master].[sys].[server_file_audits];
+GO
 
 -- Get teh server audit file on disk.
 SET NOCOUNT ON;
 EXECUTE [master].[dbo].[xp_cmdshell] @command = N'DIR /B D:\MSSQL\Backup\*.sqlaudit';
+GO
 
 -- Create the database audit specification.
-USE [AuditTest];
-CREATE DATABASE AUDIT SPECIFICATION [Private_Table_Audit_Spec]
-FOR SERVER AUDIT [Test_Server_Audit]
-ADD (SELECT, INSERT, UPDATE, DELETE ON [dbo].[private] BY [public])
+USE [TestDatabase];
+CREATE DATABASE AUDIT SPECIFICATION [TestDatabaseAuditSpecification]
+FOR SERVER AUDIT [TestServerAudit]
+ADD (SELECT, INSERT, UPDATE, DELETE ON [dbo].[PrivateTable] BY [public])
 WITH (STATE = ON);
+GO
 
 -- DML test tables.
-USE [AuditTest];
-INSERT [dbo].[private] ([value]) VALUES (NEWID());
-SELECT * FROM [dbo].[private];
-INSERT [dbo].[public] ([value]) VALUES (NEWID());
-SELECT * FROM [dbo].[public];
+USE [TestDatabase];
+INSERT [dbo].[PrivateTable] ([Value]) VALUES (NEWID());
+SELECT * FROM [dbo].[PrivateTable];
+INSERT [dbo].[PublicTable] ([Value]) VALUES (NEWID());
+SELECT * FROM [dbo].[PublicTable];
+GO
 
--- Get the audit.
--- https://docs.microsoft.com/en-us/sql/relational-databases/system-functions/sys-fn-get-audit-file-transact-sql?view=sql-server-ver16
-SELECT
-	*
-FROM
-	[master].[sys].[fn_get_audit_file](N'D:\MSSQL\Backup\Test_Server_Audit_A14F3385-8774-48E6-B92E-D428FA050283_0_132978985672540000.sqlaudit', DEFAULT, DEFAULT)
-ORDER BY
-	[event_time] DESC
-;
+-- Get the server audit file.
+SELECT * FROM [master].[sys].[server_file_audits];
+
+-- Get the audit records.
+DECLARE @FilePattern NVARCHAR(260);
+SELECT @FilePattern = [log_file_path] + REPLACE([log_file_name], N'.sqlaudit', N'*') FROM [master].[sys].[server_file_audits];
+SELECT @FilePattern AS [@FilePattern];
+SELECT * FROM [master].[sys].[fn_get_audit_file](@FilePattern, DEFAULT, DEFAULT) ORDER BY [event_time] DESC;
+GO
 
 -- Disable the database audit specification.
-USE [AuditTest];
-ALTER DATABASE AUDIT SPECIFICATION [Private_Table_Audit_Spec] WITH (STATE = OFF);
+USE [TestDatabase];
+ALTER DATABASE AUDIT SPECIFICATION [TestDatabaseAuditSpecification] WITH (STATE = OFF);
+GO
 
 -- Drop the database audit specification.
-USE [AuditTest];
-DROP DATABASE AUDIT SPECIFICATION [Private_Table_Audit_Spec];
+USE [TestDatabase];
+DROP DATABASE AUDIT SPECIFICATION [TestDatabaseAuditSpecification];
+GO
 
 -- Disable the server audit.
 USE [master];
-ALTER SERVER AUDIT [Test_Server_Audit] WITH (STATE = OFF);
+ALTER SERVER AUDIT [TestServerAudit] WITH (STATE = OFF);
+GO
 
 -- Drop the server audit.
 USE [master];
-DROP SERVER AUDIT [Test_Server_Audit];
+DROP SERVER AUDIT [TestServerAudit];
+GO
 
 -- Drop the database.
 USE [master];
-DROP DATABASE [AuditTest];
+DROP DATABASE [TestDatabase];
+GO
 
 -- Delete the audit file.
 EXECUTE [master].[dbo].[xp_cmdshell] @command = N'DEL D:\MSSQL\Backup\*.sqlaudit';
+GO
 
 /*
 -- To allow advanced options to be changed.
