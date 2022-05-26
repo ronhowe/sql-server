@@ -12,6 +12,7 @@ GO
 -- Create the server audit.
 USE [master];
 CREATE SERVER AUDIT [TestServerAudit] TO FILE (FILEPATH = N'D:\MSSQL\Backup');
+CREATE SERVER AUDIT [TestServerAudit] TO SECURITY_LOG WITH (QUEUE_DELAY = 1000);
 GO
 
 -- Enable the server audit.
