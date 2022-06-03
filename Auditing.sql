@@ -28,7 +28,7 @@ GO
 SELECT * FROM [master].[sys].[server_file_audits];
 GO
 
--- Get teh server audit file on disk.
+-- Get the server audit file on disk.
 SET NOCOUNT ON;
 EXECUTE [master].[dbo].[xp_cmdshell] @command = N'DIR /B D:\MSSQL\Backup\*.sqlaudit';
 GO
