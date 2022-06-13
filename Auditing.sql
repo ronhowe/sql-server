@@ -1,3 +1,5 @@
+-- https://docs.microsoft.com/en-us/sql/relational-databases/security/auditing/write-sql-server-audit-events-to-the-security-log?view=sql-server-ver16
+
 -- Create the database.
 USE [master];
 CREATE DATABASE [TestDatabase];
@@ -9,11 +11,14 @@ CREATE TABLE [dbo].[PrivateTable] ([Value] UNIQUEIDENTIFIER NOT NULL);
 CREATE TABLE [dbo].[PublicTable] ([Value] UNIQUEIDENTIFIER NOT NULL);
 GO
 
--- Create the server audit.
+-- Create the server audit to the Windows Security Log.
 USE [master];
-CREATE SERVER AUDIT [TestServerAudit] TO FILE (FILEPATH = N'D:\MSSQL\Backup');
 CREATE SERVER AUDIT [TestServerAudit] TO SECURITY_LOG WITH (QUEUE_DELAY = 1000);
 GO
+
+-- Create the server audit to a file.
+-- CREATE SERVER AUDIT [TestServerAudit] TO FILE (FILEPATH = N'D:\MSSQL\Backup');
+-- GO
 
 -- Enable the server audit.
 USE [master];
@@ -25,13 +30,13 @@ SELECT * FROM [master].[sys].[server_audits];
 GO
 
 -- Get the server audit file.
-SELECT * FROM [master].[sys].[server_file_audits];
-GO
+-- SELECT * FROM [master].[sys].[server_file_audits];
+-- GO
 
 -- Get the server audit file on disk.
-SET NOCOUNT ON;
-EXECUTE [master].[dbo].[xp_cmdshell] @command = N'DIR /B D:\MSSQL\Backup\*.sqlaudit';
-GO
+-- SET NOCOUNT ON;
+-- EXECUTE [master].[dbo].[xp_cmdshell] @command = N'DIR /B D:\MSSQL\Backup\*.sqlaudit';
+-- GO
 
 -- Create the database audit specification.
 USE [TestDatabase];
@@ -50,14 +55,14 @@ SELECT * FROM [dbo].[PublicTable];
 GO
 
 -- Get the server audit file.
-SELECT * FROM [master].[sys].[server_file_audits];
+-- SELECT * FROM [master].[sys].[server_file_audits];
 
 -- Get the audit records.
-DECLARE @FilePattern NVARCHAR(260);
-SELECT @FilePattern = [log_file_path] + REPLACE([log_file_name], N'.sqlaudit', N'*') FROM [master].[sys].[server_file_audits];
-SELECT @FilePattern AS [@FilePattern];
-SELECT * FROM [master].[sys].[fn_get_audit_file](@FilePattern, DEFAULT, DEFAULT) ORDER BY [event_time] DESC;
-GO
+-- DECLARE @FilePattern NVARCHAR(260);
+-- SELECT @FilePattern = [log_file_path] + REPLACE([log_file_name], N'.sqlaudit', N'*') FROM [master].[sys].[server_file_audits];
+-- SELECT @FilePattern AS [@FilePattern];
+-- SELECT * FROM [master].[sys].[fn_get_audit_file](@FilePattern, DEFAULT, DEFAULT) ORDER BY [event_time] DESC;
+-- GO
 
 -- Disable the database audit specification.
 USE [TestDatabase];
@@ -85,8 +90,8 @@ DROP DATABASE [TestDatabase];
 GO
 
 -- Delete the audit file.
-EXECUTE [master].[dbo].[xp_cmdshell] @command = N'DEL D:\MSSQL\Backup\*.sqlaudit';
-GO
+-- EXECUTE [master].[dbo].[xp_cmdshell] @command = N'DEL D:\MSSQL\Backup\*.sqlaudit';
+-- GO
 
 /*
 -- To allow advanced options to be changed.
